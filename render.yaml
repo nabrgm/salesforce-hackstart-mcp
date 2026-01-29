@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: salesforce-mcp-server
+    env: node
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: SF_CLIENT_ID
+        sync: false
+      - key: SF_USERNAME
+        sync: false
+      - key: SF_LOGIN_URL
+        sync: false
+      - key: SF_PRIVATE_KEY_BASE64
+        sync: false

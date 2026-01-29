@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "salesforce": {
+      "type": "http",
+      "url": "https://salesforce-mcp-server-production-920b.up.railway.app/mcp"
+    }
+  }
+}
