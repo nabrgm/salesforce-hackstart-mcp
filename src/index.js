@@ -247,25 +247,25 @@ server.tool(
   }
 );
 
-// Tool 5: Update Lead with SMS conversation summary
+// Tool 5: Update Contact with SMS conversation summary
 server.tool(
   "create_sms_log",
-  "Save SMS conversation summary directly to the Lead record in Salesforce. Call this AFTER every customer conversation ends. Updates the Lead's 'Invoca AI Call Summary' field with the conversation details.",
+  "Save SMS conversation summary directly to the Contact record in Salesforce. Call this AFTER every customer conversation ends. Updates the Contact's 'Invoca Call Summary' field with the conversation details.",
   {
-    leadId: z.string().describe("The Salesforce Lead ID (starts with '00Q'). Get this from search_leads or create_lead response."),
+    contactId: z.string().describe("The Salesforce Contact ID (starts with '003'). Get this from search_contacts or create_contact response."),
     conversationSummary: z.string().describe("Complete summary of the SMS conversation. Include: customer intent, what was discussed, any appointments booked, commitments made, and next steps."),
   },
-  async ({ leadId, conversationSummary }) => {
+  async ({ contactId, conversationSummary }) => {
     try {
       const conn = await getSalesforceConnection();
 
-      const result = await conn.sobject("Lead").update({
-        Id: leadId,
-        Invoca_AI_Call_Summary__c: conversationSummary,
+      const result = await conn.sobject("Contact").update({
+        Id: contactId,
+        Invoca_Call_Summary__c: conversationSummary,
       });
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ success: result.success, leadId: leadId }, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify({ success: result.success, contactId: contactId }, null, 2) }],
       };
     } catch (error) {
       return {
