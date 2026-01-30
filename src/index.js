@@ -111,7 +111,7 @@ function generatePhonePatterns(phone) {
 
 // Tool 1: Search for contacts by phone
 server.tool(
-  "search_contacts",
+  "hackstart_search_contacts",
   "Search for existing contacts in Salesforce by phone number. Use this FIRST when a customer texts in to check if they already exist in the system. Returns contact ID, name, and phone. If no results found, use create_contact to add them. Handles any phone format (with or without dashes, parentheses, etc.).",
   {
     phone: z.string().describe("Customer's phone number in any format (e.g., '239-290-1984', '2392901984', '(239) 290-1984'). The search will automatically try multiple formats to find matches."),
@@ -146,7 +146,7 @@ server.tool(
 
 // Tool 2: Create a new contact
 server.tool(
-  "create_contact",
+  "hackstart_create_contact",
   "Create a new contact in Salesforce CRM. Use this when search_contacts returns no results for a new customer. Returns the new contactId which is required for create_appointment and create_sms_log.",
   {
     firstName: z.string().describe("Customer's first name (e.g., 'John')."),
@@ -175,7 +175,7 @@ server.tool(
 
 // Tool 3: Search for leads by phone
 server.tool(
-  "search_leads",
+  "hackstart_search_leads",
   "Search for existing leads in Salesforce by phone number. Leads are potential customers who haven't been qualified yet. Use this to check if an inbound contact is already a lead before creating a new one. Returns lead ID, name, company, phone, and status. Handles any phone format (with or without dashes, parentheses, etc.).",
   {
     phone: z.string().describe("Lead's phone number in any format (e.g., '239-290-1984', '2392901984', '(239) 290-1984'). The search will automatically try multiple formats to find matches."),
@@ -210,7 +210,7 @@ server.tool(
 
 // Tool 4: Create a new lead
 server.tool(
-  "create_lead",
+  "hackstart_create_lead",
   "Create a new lead in Salesforce. Leads represent potential customers at the top of the sales funnel. Use this instead of create_contact when the person hasn't been qualified yet. Returns the new leadId for use with create_sms_log. Lead source is automatically set to 'SMS'.",
   {
     firstName: z.string().describe("Lead's first name (e.g., 'John')."),
@@ -249,7 +249,7 @@ server.tool(
 
 // Tool 5: Update Contact with SMS conversation summary
 server.tool(
-  "create_sms_log",
+  "hackstart_create_sms_log",
   "Save SMS conversation summary directly to the Contact record in Salesforce. Call this AFTER every customer conversation ends. Updates the Contact's 'Invoca Call Summary' field with the conversation details.",
   {
     contactId: z.string().describe("The Salesforce Contact ID (starts with '003'). Get this from search_contacts or create_contact response."),
@@ -278,7 +278,7 @@ server.tool(
 
 // Tool 6: Create appointment (Event)
 server.tool(
-  "create_appointment",
+  "hackstart_create_appointment",
   "Book an appointment in Salesforce calendar as an Event. Use this when customer confirms a specific time slot. IMPORTANT: Always call get_available_slots first to verify the slot is available before booking.",
   {
     contactId: z.string().describe("The Salesforce Contact ID or Lead ID (starts with '003' for contacts or '00Q' for leads). Get this from search_contacts, create_contact, search_leads, or create_lead response."),
@@ -309,7 +309,7 @@ server.tool(
 
 // Tool 7: Get available appointment slots for a specific date
 server.tool(
-  "get_available_slots",
+  "hackstart_get_available_slots",
   "Check available appointment times for a specific date. Call this BEFORE offering appointment times to customers or booking appointments. Returns available 30-minute slots not already booked. Business hours: Monday-Friday 9am-10pm Eastern. Closed weekends.",
   {
     date: z.string().describe("Date to check in YYYY-MM-DD format (e.g., '2026-01-25'). Must be a weekday (Monday-Friday). Returns empty for weekends."),
@@ -409,7 +409,7 @@ server.tool(
 
 // Tool 8: Create a new account
 server.tool(
-  "create_account",
+  "hackstart_create_account",
   "Create a business/company account in Salesforce. Use for B2B customers when tracking a company separately from individual contacts. Optional - most SMS conversations only need contacts.",
   {
     name: z.string().describe("Company or business name (e.g., 'Acme Corporation'). This is the only required field."),
