@@ -441,6 +441,103 @@ server.tool(
   }
 );
 
+// Tool 9: Schedule CTA (Mock)
+server.tool(
+  "schedule_cta",
+  `Manage Call-To-Action (CTA) reminder messages for scheduled callbacks. Handles the full lifecycle: scheduling new reminders, cancelling, rescheduling, and checking status. Only ONE CTA can be scheduled per conversation at a time.
+
+PREREQUISITE - NAME REQUIRED (HARD BLOCK):
+STOP. Before calling this tool with action "schedule" or "reschedule", ask yourself: "Did the customer tell me their name in this conversation?"
+- Scan the ENTIRE conversation history for a name.
+- If NO name was provided: You MUST ask "Before we book that, may I get your name?" and WAIT for their response.
+- DO NOT call this tool until you have their name. No exceptions.
+
+PREREQUISITE - DATE & TIME RESOLUTION (MANDATORY):
+YOU DO NOT KNOW THE CURRENT DATE. Your training data is outdated. You MUST call current_date_time to get the real date BEFORE calling this tool.
+- CALL current_date_time IMMEDIATELY when the user mentions scheduling, booking, appointments, or ANY date reference (tomorrow, Friday, next week, etc.).
+- USE the year from the tool response (NOT 2023/2024/2025). NEVER guess the year.
+- Calculate the date based on user input, then VERIFY the day-of-week matches.
+
+APPOINTMENT BOOKING FLOW (follow these steps in exact order):
+Step 0 (Name Check - MANDATORY): Verify you have the customer's name. If not, ask for it and STOP. Do NOT proceed.
+Step 1 (Identify): User indicates intent to book/schedule.
+Step 2 (Get Current Date - MANDATORY): ALWAYS call current_date_time FIRST. Do not skip this step.
+Step 3 (Calculate): Using the ACTUAL current date from current_date_time, calculate the specific date. Verify the day-of-week is correct.
+Step 4 (Validate): Call business_hours_checker with businessHours and userTime (including customer's timezone). Accept whatever timezone the customer provides and clean it into: state name (e.g., "Florida"), abbreviation (e.g., "EST"), timezone name (e.g., "Eastern"), or IANA (e.g., "America/New_York"). NEVER ask the customer to reformat their timezone. If withinBusinessHours=false, tell the customer and ask for another time.
+Step 5 (Book): If withinBusinessHours=true, call this tool with action "schedule". Copy the sendAt value from business_hours_checker response EXACTLY. Do NOT modify it. Do NOT recalculate it. The tool already computed the correct time (5 minutes before), correct date, and correct timezone offset including DST.
+
+AFTER BOOKING - WHAT TO TELL THE CUSTOMER:
+Say: "You're set for [date] at [time]. About five minutes before, you'll receive a priority phone number to call and connect with a specialist."
+If customer asks "who will contact me" or implies they expect us to reach out, IMMEDIATELY clarify: "Just to clarify—you'll call us using the priority number we send. That connects you straight to a specialist, no hold time."
+
+NEGATIVE CONSTRAINTS (NEVER do these):
+- NEVER say "reminder" when referring to the CTA
+- NEVER say "we will call you", "our specialist will dial you", "we'll reach out", or "someone will contact you"
+- We do NOT make outbound calls. The customer must call us.
+- NEVER fabricate a sendAt value — it must come from business_hours_checker
+- NEVER schedule without confirming the customer's name first`,
+  {
+    action: z.enum(["schedule", "cancel", "reschedule", "list"]).describe(
+      `The CTA lifecycle action to perform:
+- "schedule": Create a new CTA reminder. Requires sendAt. If a CTA already exists, it will be automatically rescheduled.
+- "cancel": Permanently cancel the current scheduled CTA. The message will NOT be sent. Use when customer says "cancel", "never mind", "don't text me".
+- "reschedule": Change the send time of the current CTA. Requires new sendAt. Use when customer says "make it 4pm instead", "push it back an hour".
+- "list": Check if there's a currently scheduled CTA and its details.`
+    ),
+    sendAt: z.string().optional().describe(
+      "ISO8601 datetime for when the CTA should fire (requested callback time minus 5 minutes). Required for 'schedule' and 'reschedule' actions. MUST be copied EXACTLY from business_hours_checker output — do NOT fabricate or recalculate this value. Example: '2026-03-11T14:55:00-04:00'"
+    ),
+  },
+  async ({ action, sendAt }) => {
+    const mockResponses = {
+      schedule: { success: true, action: "scheduled", messageId: "mock-msg-" + Date.now(), sendAt: sendAt || null, message: "CTA scheduled successfully" },
+      cancel: { success: true, action: "cancelled", message: "CTA has been cancelled and will not be sent" },
+      reschedule: { success: true, action: "rescheduled", messageId: "mock-msg-" + Date.now(), sendAt: sendAt || null, message: "CTA rescheduled successfully" },
+      list: { success: true, action: "list", activeCTA: null, message: "No active CTA found" },
+    };
+    return {
+      content: [{ type: "text", text: JSON.stringify(mockResponses[action] || { success: false, error: "Unknown action" }, null, 2) }],
+    };
+  }
+);
+
+// Tool 10: Post Consumer Profile (Mock)
+server.tool(
+  "post_consumer_profile",
+  `Updates the consumer profile with the user's name and phone number.
+
+WHEN TO CALL (TRIGGER): Call this tool IMMEDIATELY as soon as the user provides their name during the conversation. Do not delay — this is a high-priority action.
+
+CALL ONLY ONCE PER SESSION: Before calling, review chat history to check if you have already called this tool in this session.
+- If already called with the same data: Do NOT call again.
+- If the user provides UPDATED information (e.g., corrects their name or gives a different phone number): Call again with the new data.
+- Constraint: Only call once per session unless data changes.
+
+INPUT VALUES:
+- consumer_phone_number: Use the variable {consumer_phone_number} from the conversation context. Must be in E.164 format (e.g., "+15551234567"). Required.
+- consumer_name: The name extracted from the user's input (e.g., "John Smith"). Required.
+- conversation_id: Use the variable {conversation_id} from the conversation context. Required.
+- tenant_gid: Use the variable {tenant_gid} from the conversation context. Required.`,
+  {
+    consumer_phone_number: z.string().describe("Phone number of consumer in E.164 format (e.g., '+15551234567'). Source from {consumer_phone_number} context variable."),
+    consumer_name: z.string().describe("Consumer's full name as they provided it (e.g., 'John Smith')."),
+    conversation_id: z.string().describe("The current conversation/session ID. Source from {conversation_id} context variable."),
+    tenant_gid: z.string().describe("The tenant/account GID. Source from {tenant_gid} context variable."),
+  },
+  async ({ consumer_phone_number, consumer_name, conversation_id, tenant_gid }) => {
+    return {
+      content: [{ type: "text", text: JSON.stringify({
+        success: true,
+        consumer_phone_number,
+        consumer_name,
+        conversation_id,
+        tenant_gid,
+        message: "Consumer profile updated successfully"
+      }, null, 2) }],
+    };
+  }
+);
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
